@@ -28,22 +28,28 @@ module render # (
   input wire [$clog2(PIXEL_WIDTH):0] hcount_in,
   input wire [$clog2(PIXEL_HEIGHT):0] vcount_in,
   input wire start_in,
+  input wire [3:0] background_color,
   output logic [23:0] color_out
 );
+
   localparam PIXEL_TOTAL = PIXEL_WIDTH*PIXEL_HEIGHT;
+
   logic [$clog2(PIXEL_TOTAL)-1:0] read_addr, write_addr;
   logic [3:0] read_data, write_data;
-  logic write_valid;
+  logic read_valid, write_valid;
+
+  assign read_addr = hcount_in + PIXEL_WIDTH * vcount_in;
+  assign read_valid = hcount_in < PIXEL_WIDTH && vcount_in < PIXEL_HEIGHT;
 
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(4),
-    .RAM_DEPTH(PIXEL_TOTAL))
+    .RAM_DEPTH(PIXEL_TOTAL/2))
     pixel_array (
     .addra(read_addr),
     .clka(clk_in),
-    .wea(1'b0),
-    .dina(4'b0),
-    .ena(1'b1),
+    .wea(read_valid),
+    .dina(background_color),
+    .ena(read_valid),
     .regcea(1'b1),
     .rsta(rst_in),
     .douta(read_data),
@@ -51,13 +57,11 @@ module render # (
     .dinb(write_data),
     .clkb(clk_in),
     .web(write_valid),
-    .enb(1'b1),
+    .enb(1'b0),
     .rstb(rst_in),
     .regceb(1'b1),
     .doutb()
   );
-
-  assign read_addr = hcount_in + PIXEL_WIDTH * vcount_in;
 
   palette palette_idx_to_color (
     .clk_in(clk_in),
@@ -68,15 +72,11 @@ module render # (
 
   typedef enum {
     WAITING=0,
-    BACKGROUND=1,
-    POLYGONS=2
+    POLYGONS=1
   } draw_state;
 
   draw_state state;
 
-  logic bg_start, bg_valid, bg_done;
-  logic [$clog2(PIXEL_TOTAL):0] bg_addr;
-  logic [3:0] bg_color;
   logic poly_start, poly_valid, poly_done;
   logic [$clog2(PIXEL_TOTAL):0] poly_addr;
   logic [3:0] poly_color;
@@ -97,20 +97,6 @@ module render # (
 
   assign polygon_num_sides = 4;
 
-  draw_background # (
-    .PIXEL_WIDTH(PIXEL_WIDTH),
-    .PIXEL_HEIGHT(PIXEL_HEIGHT),
-    .COLOR(`LBLUE)
-  ) background (
-    .rst_in(rst_in),
-    .clk_in(clk_in),
-    .start_in(bg_start),
-    .pixel_addr_out(bg_addr),
-    .pixel_color_out(bg_color),
-    .valid_out(bg_valid),
-    .done_out(bg_done)
-  );
-
   draw_polygon # (
     .PIXEL_WIDTH(PIXEL_WIDTH), // number of pixels in resulting image width
     .PIXEL_HEIGHT(PIXEL_HEIGHT), // number of pixels in resulting image height
@@ -122,7 +108,7 @@ module render # (
   ) polygon (
     .rst_in(rst_in),
     .clk_in(clk_in),
-    .valid_in(poly_start),
+    .start_in(poly_start),
     .camera_x_in(640),
     .camera_y_in(360),
     .xs_in(polygon_xs), // points of polygon in order
@@ -137,26 +123,14 @@ module render # (
   always_ff @(posedge clk_in) begin
     if (rst_in) begin
       state <= WAITING;
-      bg_start <= 0;
       poly_start <= 0;
       write_valid <= 0;
     end else begin
       case (state)
         WAITING : begin
           if (start_in) begin
-            state <= BACKGROUND;
-            bg_start <= 1;
-          end
-        end
-        BACKGROUND : begin
-          bg_start <= 0;
-          write_addr <= bg_addr;
-          write_data <= bg_color;
-          write_valid <= bg_valid;
-          if (bg_done) begin
-            poly_start <= 1;
             state <= POLYGONS;
-            write_valid <= 0;
+            poly_start <= 1;
           end
         end
         POLYGONS : begin
@@ -178,48 +152,6 @@ module render # (
 
 endmodule
 
-module draw_background # (
-  parameter PIXEL_WIDTH = 1280,
-  parameter PIXEL_HEIGHT = 720,
-  parameter COLOR = `LBLUE
-) (
-  input wire rst_in,
-  input wire clk_in,
-  input wire start_in,
-  output logic [$clog2(PIXEL_WIDTH*PIXEL_HEIGHT):0] pixel_addr_out,
-  output logic [3:0] pixel_color_out,
-  output logic valid_out,
-  output logic done_out
-);
-
-  logic ongoing;
-
-  always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-      done_out <= 1;
-      valid_out <= 0;
-    end else if (start_in) begin
-      pixel_addr_out <= 0;
-      done_out <= 0;
-      valid_out <= 1;
-      ongoing <= 1;
-    end else if (ongoing) begin
-      if (pixel_addr_out < PIXEL_WIDTH * PIXEL_HEIGHT - 1) begin
-        pixel_addr_out <= pixel_addr_out + 1;
-      end else begin
-        valid_out <= 0;
-        done_out <= 1;
-        ongoing <= 0;
-      end
-    end else begin
-      done_out <= 0;
-    end
-  end
-
-  assign pixel_color_out = COLOR;
-
-endmodule
-
 module draw_polygon # (
   parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
   parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
@@ -231,7 +163,7 @@ module draw_polygon # (
 ) (
   input wire rst_in,
   input wire clk_in,
-  input wire valid_in,
+  input wire start_in,
   input wire [31:0] camera_x_in,
   input wire [31:0] camera_y_in,
   input wire [31:0] xs_in [32], // points of polygon in order
@@ -243,22 +175,70 @@ module draw_polygon # (
   output logic done_out
 );
 
-  logic [31:0] point_a, point_b;
+  logic [$clog2(PIXEL_WIDTH):0] x_a, x_b;
+  logic [$clog2(PIXEL_HEIGHT):0] y_a, y_b;
   logic [4:0] i;
 
+  typedef enum {
+    READY=0,
+    MINMAX=1,
+    FILL=2,
+    EDGES=3
+  } draw_state;
+
+  draw_state state;
+
+  // minmax variables
+  logic [$clog2(PIXEL_WIDTH):0] x_min, x_max;
+  logic [$clog2(PIXEL_HEIGHT):0] y_min, y_max;
+
+  // fill variables
+  logic angle_total;
+
   always_ff @(posedge clk_in) begin
-    if (valid_in) begin
-      done_out <= 0;
-      valid_out <= 1;
-      pixel_addr_out <= 0;
-      pixel_color_out <= `RED;
+    if (rst_in) begin
+      state <= READY;
     end else begin
-      valid_out <= 0;
-      done_out <= 1;
+      case (state)
+        READY : begin
+          i <= 0;
+          x_a <= xs_in[0];
+          y_a <= ys_in[0];
+
+          x_min <= PIXEL_WIDTH - 1;
+          y_min <= PIXEL_HEIGHT - 1;
+          x_max <= 0;
+          y_max <= 0;
+
+          if (start_in) begin
+            state <= MINMAX;
+          end
+        end
+        MINMAX : begin
+          x_min <= x_a < x_min ? x_a : x_min;
+          y_min <= y_a < y_min ? y_a : y_min;
+          x_max <= x_a > x_max ? x_a : x_max;
+          y_max <= y_a > y_max ? y_a : y_max;
+
+          if (i < num_points_in - 1) begin
+            x_a <= xs_in[i + 1];
+            y_a <= ys_in[i + 1];
+            i <= i + 1;
+          end else begin
+            i <= 0;
+            x_a <= xs_in[0];
+            y_a <= ys_in[0];
+            state <= FILL;
+          end
+        end
+        FILL : begin
+          
+        end
+        EDGES : begin
+          
+        end
+      endcase
     end
-    i <= i + 1;
-    point_a <= xs_in[i];
-    point_b <= point_a;
   end
 
 endmodule
