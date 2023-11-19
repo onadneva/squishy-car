@@ -66,6 +66,7 @@ module top_level(
 		.hcount_in(hcount),
 		.vcount_in(vcount),
 		.start_in(new_frame),
+        .background_color(sw[3:0]),
 		.color_out(color_out)
   );
 

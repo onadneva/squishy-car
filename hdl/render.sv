@@ -21,13 +21,15 @@
 module render # (
   parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
   parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
-  parameter PIXEL_SCALE = 1     // how much to zoom in (bigger scale means bigger zoom)
+  parameter PIXEL_SCALE = 1,     // how much to zoom in (bigger scale means bigger zoom)
+  parameter MAX_NUM_VERTICES = 4
 ) (
   input wire rst_in,
   input wire clk_in,
   input wire [$clog2(PIXEL_WIDTH)-1:0] hcount_in,
   input wire [$clog2(PIXEL_HEIGHT)-1:0] vcount_in,
   input wire start_in,
+  input wire [3:0] background_color,
   output logic [23:0] color_out
 );
 
@@ -70,12 +72,11 @@ module render # (
   draw_state state;
 
   logic poly_start, poly_valid, poly_done;
-  logic [$clog2(PIXEL_TOTAL)-1:0] poly_addr;
-  logic [3:0] poly_color, color_idx;
+  logic [3:0] poly_color;
 
-  logic signed [31:0] polygon_xs [4];
-  logic signed [31:0] polygon_ys [4];
-  logic [4:0] polygon_num_sides;
+  logic signed [31:0] polygon_xs [MAX_NUM_VERTICES];
+  logic signed [31:0] polygon_ys [MAX_NUM_VERTICES];
+  logic [$clog2(MAX_NUM_VERTICES):0] polygon_num_sides;
 
   assign polygon_xs[0] = 100;
   assign polygon_xs[1] = 200;
@@ -131,7 +132,7 @@ module render # (
         end
         POLYGONS : begin
           poly_start <= 0;
-          write_addr <= poly_addr;
+          write_addr <= hcount_mem * PIXEL_WIDTH + vcount_mem;
           write_data <= poly_color;
           write_valid <= poly_valid;
           if (poly_done) begin
