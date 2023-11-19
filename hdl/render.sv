@@ -21,12 +21,13 @@
 module render # (
   parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
   parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
-  parameter PIXEL_SCALE = 1     // how much to zoom in (bigger scale means bigger zoom)
+  parameter PIXEL_SCALE = 1,     // how much to zoom in (bigger scale means bigger zoom)
+  parameter MAX_NUM_VERTICES = 4
 ) (
   input wire rst_in,
   input wire clk_in,
-  input wire [$clog2(PIXEL_WIDTH):0] hcount_in,
-  input wire [$clog2(PIXEL_HEIGHT):0] vcount_in,
+  input wire [$clog2(PIXEL_WIDTH)-1:0] hcount_in,
+  input wire [$clog2(PIXEL_HEIGHT)-1:0] vcount_in,
   input wire start_in,
   input wire [3:0] background_color,
   output logic [23:0] color_out
@@ -37,6 +38,9 @@ module render # (
   logic [$clog2(PIXEL_TOTAL)-1:0] read_addr, write_addr;
   logic [3:0] read_data, write_data;
   logic read_valid, write_valid;
+
+  logic [$clog2(PIXEL_WIDTH)-1:0] hcount_mem;
+  logic [$clog2(PIXEL_HEIGHT)-1:0] vcount_mem;
 
   assign read_addr = hcount_in + PIXEL_WIDTH * vcount_in;
   assign read_valid = hcount_in < PIXEL_WIDTH && vcount_in < PIXEL_HEIGHT;
@@ -78,12 +82,11 @@ module render # (
   draw_state state;
 
   logic poly_start, poly_valid, poly_done;
-  logic [$clog2(PIXEL_TOTAL):0] poly_addr;
   logic [3:0] poly_color;
 
-  logic [31:0] polygon_xs [32];
-  logic [31:0] polygon_ys [32];
-  logic [4:0] polygon_num_sides;
+  logic signed [31:0] polygon_xs [MAX_NUM_VERTICES];
+  logic signed [31:0] polygon_ys [MAX_NUM_VERTICES];
+  logic [$clog2(MAX_NUM_VERTICES):0] polygon_num_sides;
 
   assign polygon_xs[0] = 100;
   assign polygon_xs[1] = 200;
@@ -114,7 +117,8 @@ module render # (
     .xs_in(polygon_xs), // points of polygon in order
     .ys_in(polygon_ys),
     .num_points_in(polygon_num_sides), // from 3 to 31
-    .pixel_addr_out(poly_addr),
+    .hcount_out(hcount_mem),
+    .vcount_out(vcount_mem),
     .pixel_color_out(poly_color),
     .valid_out(poly_valid),
     .done_out(poly_done)
@@ -135,7 +139,7 @@ module render # (
         end
         POLYGONS : begin
           poly_start <= 0;
-          write_addr <= poly_addr;
+          write_addr <= hcount_mem * PIXEL_WIDTH + vcount_mem;
           write_data <= poly_color;
           write_valid <= poly_valid;
           if (poly_done) begin
@@ -145,97 +149,6 @@ module render # (
         end
         default : begin
           state <= WAITING;
-        end
-      endcase
-    end
-  end
-
-endmodule
-
-module draw_polygon # (
-  parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
-  parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
-  parameter PIXEL_SCALE = 1,    // how much to zoom in (bigger scale means bigger zoom)
-
-  parameter LINE_THICKNESS = 1, // thickness in pixels
-  parameter LINE_COLOR = `BLACK,
-  parameter FILL_COLOR = `RED
-) (
-  input wire rst_in,
-  input wire clk_in,
-  input wire start_in,
-  input wire [31:0] camera_x_in,
-  input wire [31:0] camera_y_in,
-  input wire [31:0] xs_in [32], // points of polygon in order
-  input wire [31:0] ys_in [32],
-  input wire [4:0] num_points_in, // from 3 to 31
-  output logic [$clog2(PIXEL_WIDTH*PIXEL_HEIGHT):0] pixel_addr_out,
-  output logic [3:0] pixel_color_out,
-  output logic valid_out,
-  output logic done_out
-);
-
-  logic [$clog2(PIXEL_WIDTH):0] x_a, x_b;
-  logic [$clog2(PIXEL_HEIGHT):0] y_a, y_b;
-  logic [4:0] i;
-
-  typedef enum {
-    READY=0,
-    MINMAX=1,
-    FILL=2,
-    EDGES=3
-  } draw_state;
-
-  draw_state state;
-
-  // minmax variables
-  logic [$clog2(PIXEL_WIDTH):0] x_min, x_max;
-  logic [$clog2(PIXEL_HEIGHT):0] y_min, y_max;
-
-  // fill variables
-  logic angle_total;
-
-  always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-      state <= READY;
-    end else begin
-      case (state)
-        READY : begin
-          i <= 0;
-          x_a <= xs_in[0];
-          y_a <= ys_in[0];
-
-          x_min <= PIXEL_WIDTH - 1;
-          y_min <= PIXEL_HEIGHT - 1;
-          x_max <= 0;
-          y_max <= 0;
-
-          if (start_in) begin
-            state <= MINMAX;
-          end
-        end
-        MINMAX : begin
-          x_min <= x_a < x_min ? x_a : x_min;
-          y_min <= y_a < y_min ? y_a : y_min;
-          x_max <= x_a > x_max ? x_a : x_max;
-          y_max <= y_a > y_max ? y_a : y_max;
-
-          if (i < num_points_in - 1) begin
-            x_a <= xs_in[i + 1];
-            y_a <= ys_in[i + 1];
-            i <= i + 1;
-          end else begin
-            i <= 0;
-            x_a <= xs_in[0];
-            y_a <= ys_in[0];
-            state <= FILL;
-          end
-        end
-        FILL : begin
-          
-        end
-        EDGES : begin
-          
         end
       endcase
     end
