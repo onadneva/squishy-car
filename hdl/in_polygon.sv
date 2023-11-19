@@ -36,16 +36,16 @@ module in_polygon # (
       if (angle_diff > 180) begin
         sum_angle_delta = sum_angle_delta + angle_diff - 360;
       end else if (angle_diff < -180) begin
-        sum_angle_delta = sum_angle_delta + 360 - angle_diff;
+        sum_angle_delta = sum_angle_delta + 360 + angle_diff;
       end else begin
         sum_angle_delta = sum_angle_delta + angle_diff;
       end
     end
 
     if (sum_angle_delta > -180 && sum_angle_delta < 180) begin
-      out = 1;
-    end else begin
       out = 0;
+    end else begin
+      out = 1;
     end
   end
 
