@@ -49,6 +49,7 @@ module draw_polygon # (
     .PIXEL_HEIGHT(720),
     .MAX_NUM_VERTICES(4)
   ) check_in_polygon (
+    .clk_in(clk_in),
     .hcount_in(hcount_in),
     .vcount_in(vcount_in),
     .xs_in(xs_in),

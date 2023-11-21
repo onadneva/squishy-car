@@ -20,11 +20,16 @@ read_verilog -sv [ glob ./hdl/*.sv ]
 # uncomment line below if verilog (.v) files present:
 read_verilog  [ glob ./hdl/*.v ]
 read_xdc ./xdc/top_level.xdc
-#we'll use this later:
-# read_mem [ glob ./data/*.mem ]
+# we'll use this later:
+read_mem [ glob ./data/*.mem ]
 
 # set the part number so Vivado knows how to build (each FPGA is different)
 set_part $partNum
+
+# Read in all IP
+read_ip ./ip/signed_int_divider/signed_int_divider.xci
+generate_target all [get_ips]
+synth_ip [get_ips]
 
 #Run Synthesis
 synth_design -top top_level -part $partNum -verbose
