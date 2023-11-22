@@ -25,7 +25,7 @@ module in_polygon # (
   generate
     genvar t;
     for (t = 0; t < MAX_NUM_VERTICES; t = t + 1) begin
-      angle_approx instance_name_i (
+      angle_approx angle_approx_i (
         .clk_in(clk_in),
         .x_in(xs_in[t] - hcount_in),
         .y_in(ys_in[t] - vcount_in),
@@ -52,7 +52,9 @@ module in_polygon # (
   endgenerate
 
   always_ff @(posedge clk_in) begin
-    angle_diffs <= temp_angle_diffs;
+    for (int i = 0; i < MAX_NUM_VERTICES; i = i + 1) begin
+      angle_diffs[i] <= temp_angle_diffs[i];
+    end
   end
 
   // sum up all these differences in angles to determine whether the (hcount, vcount) is inside the polygon

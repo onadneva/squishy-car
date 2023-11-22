@@ -12,9 +12,15 @@ openFPGALoader -b arty_s7_50 obj/final.bit
 
 ### Simulating testbenches
 
-#### Draw Polygon
+To run the testbenches, we will need to first simulate the divider IP:
 
-iverilog -g2012 -o foo.out sim/draw_polygon_tb.sv hdl/draw_polygon.sv hdl/in_polygon.sv hdl/angle.sv
+In `angle.sv`, replace `signed_int_divider`  with `signed_int_divider_sim`.
+
+Then paste any of the following lines into the command line.
+
+#### Check in Polygon
+
+iverilog -g2012 -o foo.out sim/in_polygon_tb.sv hdl/in_polygon.sv hdl/angle.sv hdl/signed_int_divider_sim.sv
 
 ## IP
 

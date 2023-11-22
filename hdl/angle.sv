@@ -19,17 +19,8 @@ module angle_approx (
 
   assign in_valid = 1;
 
-  always_comb begin
-    if ((x_in < 0 ? -x_in : x_in) > (y_in < 0 ? -y_in : y_in)) begin
-      // abs(x) > abs(y)
-      dividend = x_in << PRECISION;
-      divisor = y_in;
-    end else begin
-      // abs(x) <= abs(y)
-      dividend = y_in << PRECISION;
-      divisor = x_in;
-    end
-  end
+  assign dividend = y_in << PRECISION;
+  assign divisor = x_in;
 
   signed_int_divider div (
     .aclk(clk_in),
