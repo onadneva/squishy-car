@@ -19,9 +19,9 @@
 `define LBLUE 4'hF
 
 module render # (
-  parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
-  parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
-  parameter PIXEL_SCALE = 1,     // how much to zoom in (bigger scale means bigger zoom)
+  parameter PIXEL_WIDTH = 1280,
+  parameter PIXEL_HEIGHT = 720,
+  parameter SCALE_LEVEL = 0,
   parameter MAX_NUM_VERTICES = 8,
   parameter MAX_POLYGONS_ON_SCREEN = 4
 ) (
@@ -104,7 +104,7 @@ module render # (
       draw_polygon # (
         .PIXEL_WIDTH(PIXEL_WIDTH), // number of pixels in resulting image width
         .PIXEL_HEIGHT(PIXEL_HEIGHT), // number of pixels in resulting image height
-        .PIXEL_SCALE(PIXEL_SCALE),    // how much to zoom in (bigger scale means bigger zoom)
+        .SCALE_LEVEL(SCALE_LEVEL),    // how much to zoom in (bigger scale means bigger zoom)
 
         .LINE_THICKNESS(5), // thickness in pixels
         .LINE_COLOR(`BLACK),

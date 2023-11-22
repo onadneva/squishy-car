@@ -7,10 +7,10 @@ module in_polygon # (
   parameter MAX_NUM_VERTICES = 32
 ) (
   input wire clk_in,
-  input wire [$clog2(PIXEL_WIDTH)-1:0] hcount_in,
-  input wire [$clog2(PIXEL_HEIGHT)-1:0] vcount_in,
-  input wire signed [31:0] xs_in [MAX_NUM_VERTICES],
-  input wire signed [31:0] ys_in [MAX_NUM_VERTICES],
+  input wire signed [31:0] x_in,
+  input wire signed [31:0] y_in,
+  input wire signed [31:0] poly_xs_in [MAX_NUM_VERTICES],
+  input wire signed [31:0] poly_ys_in [MAX_NUM_VERTICES],
   input wire [$clog2(MAX_NUM_VERTICES+1)-1:0] num_points_in,
   output logic out
 );
@@ -27,8 +27,8 @@ module in_polygon # (
     for (t = 0; t < MAX_NUM_VERTICES; t = t + 1) begin
       angle_approx angle_approx_i (
         .clk_in(clk_in),
-        .x_in(xs_in[t] - hcount_in),
-        .y_in(ys_in[t] - vcount_in),
+        .x_in(poly_xs_in[t] - x_in),
+        .y_in(poly_ys_in[t] - y_in),
         .angle_out(angles[t])
       );
     end

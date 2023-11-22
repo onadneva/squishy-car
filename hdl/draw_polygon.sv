@@ -19,9 +19,9 @@
 `define LBLUE 4'hF
 
 module draw_polygon # (
-  parameter PIXEL_WIDTH = 1280, // number of pixels in resulting image width
-  parameter PIXEL_HEIGHT = 720, // number of pixels in resulting image height
-  parameter PIXEL_SCALE = 1,    // how much to zoom in (bigger scale means bigger zoom)
+  parameter PIXEL_WIDTH = 1280,
+  parameter PIXEL_HEIGHT = 720,
+  parameter SCALE_LEVEL = 0,
 
   parameter LINE_THICKNESS = 1, // thickness in pixels
   parameter LINE_COLOR = `BLACK,
@@ -42,7 +42,22 @@ module draw_polygon # (
   output logic valid_out
 );
 
+  logic signed [31:0] world_x, world_y;
   logic valid_fill;
+
+  pixel_to_world # (
+    .PIXEL_WIDTH(PIXEL_WIDTH),
+    .PIXEL_HEIGHT(PIXEL_HEIGHT),
+    .SCALE_LEVEL(SCALE_LEVEL)
+  ) get_world_coordinates (
+    .clk_in(clk_in),
+    .camera_x_in(camera_x_in),
+    .camera_y_in(camera_y_in),
+    .hcount_in(hcount_in), 
+    .vcount_in(vcount_in),
+    .world_x_out(world_x),
+    .world_y_out(world_y)
+  );
 
   in_polygon # (
     .PIXEL_WIDTH(PIXEL_WIDTH),
@@ -50,10 +65,10 @@ module draw_polygon # (
     .MAX_NUM_VERTICES(MAX_NUM_VERTICES)
   ) check_in_polygon (
     .clk_in(clk_in),
-    .hcount_in(hcount_in),
-    .vcount_in(vcount_in),
-    .xs_in(xs_in),
-    .ys_in(ys_in),
+    .x_in(world_x),
+    .y_in(world_y),
+    .poly_xs_in(xs_in),
+    .poly_ys_in(ys_in),
     .num_points_in(num_points_in),
     .out(valid_fill)
   );

@@ -58,15 +58,13 @@ module top_level(
 
   logic [31:0] camera_x, camera_y;
 
-  render # (
-    .PIXEL_SCALE(1)     // how much to zoom in (bigger scale means bigger zoom)
-  ) (
-		.rst_in(sys_rst),
-		.clk_in(clk_pixel),
-		.hcount_in(hcount),
-		.vcount_in(vcount),
-        .background_color(sw[3:0]),
-		.color_out(color_out)
+  render render_game (
+    .rst_in(sys_rst),
+    .clk_in(clk_pixel),
+    .hcount_in(hcount),
+    .vcount_in(vcount),
+    .background_color(sw[3:0]),
+    .color_out(color_out)
   );
 
 	always_comb begin
