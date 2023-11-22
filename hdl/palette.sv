@@ -35,7 +35,6 @@ module palette (
     endcase
   end
 
-  // // IDK why this doesn't work
   // xilinx_single_port_ram_read_first #(
   //   .RAM_WIDTH(24),
   //   .RAM_DEPTH(16),

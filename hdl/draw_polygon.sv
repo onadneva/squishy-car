@@ -27,7 +27,7 @@ module draw_polygon # (
   parameter LINE_COLOR = `BLACK,
   parameter FILL_COLOR = `RED,
 
-  parameter MAX_NUM_VERTICES = 4
+  parameter MAX_NUM_VERTICES = 32
 ) (
   input wire rst_in,
   input wire clk_in,
@@ -37,7 +37,7 @@ module draw_polygon # (
   input wire [31:0] camera_y_in,
   input wire signed [31:0] xs_in [MAX_NUM_VERTICES], // points of polygon in order
   input wire signed [31:0] ys_in [MAX_NUM_VERTICES],
-  input wire [$clog2(MAX_NUM_VERTICES):0] num_points_in, // from 3 to MAX_NUM_VERTICES
+  input wire [$clog2(MAX_NUM_VERTICES+1)-1:0] num_points_in, // from 3 to MAX_NUM_VERTICES
   output logic [3:0] pixel_color_out,
   output logic valid_out
 );
@@ -45,15 +45,16 @@ module draw_polygon # (
   logic valid_fill;
 
   in_polygon # (
-    .PIXEL_WIDTH(1280),
-    .PIXEL_HEIGHT(720),
-    .MAX_NUM_VERTICES(4)
+    .PIXEL_WIDTH(PIXEL_WIDTH),
+    .PIXEL_HEIGHT(PIXEL_HEIGHT),
+    .MAX_NUM_VERTICES(MAX_NUM_VERTICES)
   ) check_in_polygon (
     .clk_in(clk_in),
     .hcount_in(hcount_in),
     .vcount_in(vcount_in),
     .xs_in(xs_in),
     .ys_in(ys_in),
+    .num_points_in(num_points_in),
     .out(valid_fill)
   );
 

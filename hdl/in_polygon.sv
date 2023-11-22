@@ -4,13 +4,14 @@
 module in_polygon # (
   parameter PIXEL_WIDTH = 1280,
   parameter PIXEL_HEIGHT = 720,
-  parameter MAX_NUM_VERTICES = 4
+  parameter MAX_NUM_VERTICES = 32
 ) (
   input wire clk_in,
   input wire [$clog2(PIXEL_WIDTH)-1:0] hcount_in,
   input wire [$clog2(PIXEL_HEIGHT)-1:0] vcount_in,
   input wire signed [31:0] xs_in [MAX_NUM_VERTICES],
   input wire signed [31:0] ys_in [MAX_NUM_VERTICES],
+  input wire [$clog2(MAX_NUM_VERTICES+1)-1:0] num_points_in,
   output logic out
 );
 
@@ -38,7 +39,7 @@ module in_polygon # (
     genvar u;
     for (u = 0; u < MAX_NUM_VERTICES; u = u + 1) begin
       always_comb begin
-        temp_angle_diffs[u] = angles[u + 1 < MAX_NUM_VERTICES ? u + 1 : 0] - angles[u];
+        temp_angle_diffs[u] = angles[u + 1 < num_points_in ? u + 1 : 0] - angles[u];
         if (temp_angle_diffs[u] > 180) begin
           temp_angle_diffs[u] = temp_angle_diffs[u] - 360;
         end else if (temp_angle_diffs[u] < -180) begin
@@ -59,7 +60,7 @@ module in_polygon # (
   always_comb begin
     sum_angle_delta = 0;
     for (int i = 0; i < MAX_NUM_VERTICES; i = i + 1) begin
-      sum_angle_delta = sum_angle_delta + angle_diffs[i];
+      sum_angle_delta = sum_angle_delta + (i < num_points_in ? angle_diffs[i] : 0);
     end
 
     if (sum_angle_delta > -180 && sum_angle_delta < 180) begin
