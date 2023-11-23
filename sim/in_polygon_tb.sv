@@ -7,8 +7,8 @@ module in_polygon_tb;
   logic clk_in;
   logic rst_in;
   logic [11:0] pixel_out;
-  logic [10:0] hcount_in;
-  logic [9:0] vcount_in;
+  logic signed [31:0] hcount_in;
+  logic signed [31:0] vcount_in;
 
   localparam MAX_NUM_VERTICES = 8;
 
@@ -46,10 +46,10 @@ module in_polygon_tb;
     .MAX_NUM_VERTICES(MAX_NUM_VERTICES)
   ) uut (
     .clk_in(clk_in),
-    .hcount_in(hcount_in),
-    .vcount_in(vcount_in),
-    .xs_in(polygon_xs),
-    .ys_in(polygon_ys),
+    .x_in(hcount_in),
+    .y_in(vcount_in),
+    .poly_xs_in(polygon_xs),
+    .poly_ys_in(polygon_ys),
     .num_points_in(polygon_num_sides),
     .out(in_polygon_out)
   );

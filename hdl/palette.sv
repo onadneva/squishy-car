@@ -16,22 +16,22 @@ module palette (
 
   always_ff @(posedge clk_in) begin
     case (idx_in)
-      4'b0000: color_out = 24'h000000;
-      4'b0001: color_out = 24'h9d9d9d;
-      4'b0010: color_out = 24'hffffff;
-      4'b0011: color_out = 24'hbe2633;
-      4'b0100: color_out = 24'he06f8b;
-      4'b0101: color_out = 24'h493c2b;
-      4'b0110: color_out = 24'ha46422;
-      4'b0111: color_out = 24'heb8931;
-      4'b1000: color_out = 24'hf7e26b;
-      4'b1001: color_out = 24'h2f484e;
-      4'b1010: color_out = 24'h44891a;
-      4'b1011: color_out = 24'ha3ce27;
-      4'b1100: color_out = 24'h1b2632;
-      4'b1101: color_out = 24'h005784;
-      4'b1110: color_out = 24'h31a2f2;
-      4'b1111: color_out = 24'hb2dcef;
+      4'h0: color_out = 24'h000000;
+      4'h1: color_out = 24'h9d9d9d;
+      4'h2: color_out = 24'hffffff;
+      4'h3: color_out = 24'hbe2633;
+      4'h4: color_out = 24'he06f8b;
+      4'h5: color_out = 24'h493c2b;
+      4'h6: color_out = 24'ha46422;
+      4'h7: color_out = 24'heb8931;
+      4'h8: color_out = 24'hf7e26b;
+      4'h9: color_out = 24'h2f484e;
+      4'hA: color_out = 24'h44891a;
+      4'hB: color_out = 24'ha3ce27;
+      4'hC: color_out = 24'h1b2632;
+      4'hD: color_out = 24'h005784;
+      4'hE: color_out = 24'h31a2f2;
+      4'hF: color_out = 24'hb2dcef;
     endcase
   end
 

@@ -21,6 +21,7 @@
 module draw_polygon # (
   parameter PIXEL_WIDTH = 1280,
   parameter PIXEL_HEIGHT = 720,
+  parameter WORLD_BITS = 32,
   parameter SCALE_LEVEL = 0,
 
   parameter LINE_THICKNESS = 1, // thickness in pixels
@@ -33,16 +34,16 @@ module draw_polygon # (
   input wire clk_in,
   input wire [$clog2(PIXEL_WIDTH)-1:0] hcount_in,
   input wire [$clog2(PIXEL_HEIGHT)-1:0] vcount_in,
-  input wire [31:0] camera_x_in,
-  input wire [31:0] camera_y_in,
-  input wire signed [31:0] xs_in [MAX_NUM_VERTICES], // points of polygon in order
-  input wire signed [31:0] ys_in [MAX_NUM_VERTICES],
+  input wire [WORLD_BITS-1:0] camera_x_in,
+  input wire [WORLD_BITS-1:0] camera_y_in,
+  input wire signed [WORLD_BITS-1:0] xs_in [MAX_NUM_VERTICES], // points of polygon in order
+  input wire signed [WORLD_BITS-1:0] ys_in [MAX_NUM_VERTICES],
   input wire [$clog2(MAX_NUM_VERTICES+1)-1:0] num_points_in, // from 3 to MAX_NUM_VERTICES
   output logic [3:0] pixel_color_out,
   output logic valid_out
 );
 
-  logic signed [31:0] world_x, world_y;
+  logic signed [WORLD_BITS-1:0] world_x, world_y;
   logic valid_fill;
 
   pixel_to_world # (

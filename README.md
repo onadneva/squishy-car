@@ -24,6 +24,12 @@ iverilog -g2012 -o foo.out sim/in_polygon_tb.sv hdl/in_polygon.sv hdl/angle.sv h
 
 ## IP
 
+### Multiplier
+
+![Multiplier](signed_int_multiplier.png)
+
+Latency of 1 cycle.
+
 ### Divider
 
 ![Divider](signed_int_divider.png)
