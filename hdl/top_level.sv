@@ -1,6 +1,23 @@
 `timescale 1ns / 1ps
 `default_nettype none // prevents system from inferring an undeclared logic (good practice)
  
+`define BLACK 4'h0
+`define GRAY 4'h1
+`define WHITE 4'h2
+`define RED 4'h3
+`define PINK 4'h4
+`define DBROWN 4'h5
+`define BROWN 4'h6
+`define ORANGE 4'h7
+`define YELLOW 4'h8
+`define DGREEN 4'h9
+`define GREEN 4'hA
+`define LGREEN 4'hB
+`define PURPLE 4'hC
+`define DBLUE 4'hD
+`define BLUE 4'hE
+`define LBLUE 4'hF
+
 module top_level(
   input wire clk_100mhz, //crystal reference clock
   input wire [15:0] sw, //all 16 input slide switches
@@ -56,14 +73,95 @@ module top_level(
 	logic [23:0] color_out;
   logic [7:0] red, green, blue; //red green and blue pixel values for output
 
-  logic [31:0] camera_x, camera_y;
+  ////////////////////////////////////////////
+  //
+  //                 RENDER                     
+  //
+  ////////////////////////////////////////////
 
-  render render_game (
+  localparam PIXEL_WIDTH = 1280;
+  localparam PIXEL_HEIGHT = 720;
+  localparam SCALE_LEVEL = 0;
+  localparam WORLD_BITS = 32;
+  localparam MAX_NUM_VERTICES = 8;
+  localparam MAX_POLYGONS_ON_SCREEN = 4;
+  localparam BACKGROUND_COLOR = `LBLUE;
+  localparam EDGE_COLOR = `BLACK;
+  localparam EDGE_THICKNESS = 3;
+
+  logic signed [WORLD_BITS-1:0] camera_x, camera_y;
+  logic signed [WORLD_BITS-1:0] polygons_xs [MAX_POLYGONS_ON_SCREEN] [MAX_NUM_VERTICES];
+  logic signed [WORLD_BITS-1:0] polygons_ys [MAX_POLYGONS_ON_SCREEN] [MAX_NUM_VERTICES];
+  logic [$clog2(MAX_NUM_VERTICES+1)-1:0] polygons_num_sides [MAX_POLYGONS_ON_SCREEN];
+  logic [$clog2(MAX_POLYGONS_ON_SCREEN+1)-1:0] num_polygons;
+  logic [3:0] polygons_colors [MAX_POLYGONS_ON_SCREEN];
+
+  assign camera_x = 640;
+  assign camera_y = 360;
+
+  assign polygons_xs[0][0] = 100;
+  assign polygons_xs[0][1] = 200;
+  assign polygons_xs[0][2] = 200;
+  assign polygons_xs[0][3] = 100;
+
+  assign polygons_ys[0][0] = 100;
+  assign polygons_ys[0][1] = 100;
+  assign polygons_ys[0][2] = 200;
+  assign polygons_ys[0][3] = 200;
+
+  assign polygons_num_sides[0] = 4;
+  assign polygons_colors[0] = `RED;
+
+  assign polygons_xs[1][0] = 300;
+  assign polygons_xs[1][1] = 400;
+  assign polygons_xs[1][2] = 500;
+
+  assign polygons_ys[1][0] = 300;
+  assign polygons_ys[1][1] = 100;
+  assign polygons_ys[1][2] = 300;
+
+  assign polygons_num_sides[1] = 3;
+  assign polygons_colors[1] = `GREEN;
+
+  assign polygons_xs[2][0] = 700;
+  assign polygons_xs[2][1] = 900;
+  assign polygons_xs[2][2] = 900;
+  assign polygons_xs[2][3] = 800;
+  assign polygons_xs[2][4] = 700;
+
+  assign polygons_ys[2][0] = 250;
+  assign polygons_ys[2][1] = 250;
+  assign polygons_ys[2][2] = 150;
+  assign polygons_ys[2][3] = 50;
+  assign polygons_ys[2][4] = 150;
+
+  assign polygons_num_sides[2] = 5;
+  assign polygons_colors[2] = `YELLOW;
+  
+  assign num_polygons = 3;
+
+  render # (
+    .PIXEL_WIDTH(PIXEL_WIDTH),
+    .PIXEL_HEIGHT(PIXEL_HEIGHT),
+    .SCALE_LEVEL(SCALE_LEVEL),
+    .WORLD_BITS(WORLD_BITS),
+    .MAX_NUM_VERTICES(MAX_NUM_VERTICES),
+    .MAX_POLYGONS_ON_SCREEN(MAX_POLYGONS_ON_SCREEN),
+    .BACKGROUND_COLOR(BACKGROUND_COLOR),
+    .EDGE_COLOR(EDGE_COLOR),
+    .EDGE_THICKNESS(EDGE_THICKNESS)
+  ) render_game (
     .rst_in(sys_rst),
     .clk_in(clk_pixel),
     .hcount_in(hcount),
     .vcount_in(vcount),
-    .background_color(sw[3:0]),
+    .camera_x_in(camera_x),
+    .camera_y_in(camera_y),
+    .polygons_xs_in(polygons_xs),
+    .polygons_ys_in(polygons_ys),
+    .polygons_num_sides_in(polygons_num_sides),
+    .num_polygons_in(num_polygons),
+    .colors_in(polygons_colors),
     .color_out(color_out)
   );
 
