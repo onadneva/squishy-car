@@ -21,7 +21,7 @@ module pixel_to_world # (
 
   always_comb begin
     x_pos = hcount_in - (PIXEL_WIDTH >> 1);
-    y_pos = vcount_in - (PIXEL_HEIGHT >> 1);
+    y_pos = (PIXEL_HEIGHT >> 1) - vcount_in;
 
     world_x_temp = (SCALE_LEVEL >= 0 ? x_pos << SCALE_LEVEL : x_pos >>> -SCALE_LEVEL) + camera_x_in;
     world_y_temp = (SCALE_LEVEL >= 0 ? y_pos << SCALE_LEVEL : y_pos >>> -SCALE_LEVEL) + camera_y_in;

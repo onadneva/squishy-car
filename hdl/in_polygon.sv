@@ -27,14 +27,14 @@ module in_polygon # (
 
   generate
     for (genvar v = 0; v < MAX_NUM_VERTICES; v = v + 1) begin
-      signed_int_multiplier multiply1 (
+      multiply_pipelined multiply1 (
         .CLK(clk_in),
         .A(Lx[v] - Hx[v]),
         .B(y_in - Hy[v]),
         .P(mul1[v])
       );
 
-      signed_int_multiplier multiply2 (
+      multiply_pipelined multiply2 (
         .CLK(clk_in),
         .A(Ly[v] - Hy[v]),
         .B(x_in - Hx[v]),
