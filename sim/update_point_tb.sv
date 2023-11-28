@@ -87,7 +87,7 @@ module update_point_tb();
     begin_update = 1;
     pos_x = 2;
     pos_y = 3;
-    vel_x = -1;
+    vel_x = -2;
     vel_y = 0;
     #10
     begin_update = 0;
