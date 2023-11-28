@@ -3,7 +3,7 @@ module update_point #(parameter DT = 1, parameter POSITION_SIZE=8, parameter VEL
   input  wire rst_in,
   input  wire begin_in,
   input  wire [POSITION_SIZE-1:0] obstacles_in [1:0][NUM_VERTICES][NUM_OBSTACLES],
-  input  wire [POSITION_SIZE-1:0] all_num_vertices_in [NUM_OBSTACLES], //array of num_vertices
+  input  wire [POSITION_SIZE-1:0] num_vertices_in [NUM_OBSTACLES], //array of num_vertices
   input wire [POSITION_SIZE-1:0] num_obstacles_in,
   input  wire signed [POSITION_SIZE-1:0] pos_x_in,
   input  wire signed [POSITION_SIZE-1:0] pos_y_in,
@@ -16,6 +16,23 @@ module update_point #(parameter DT = 1, parameter POSITION_SIZE=8, parameter VEL
   output logic result_out
 );
 
+collisions #(DT, POSITION_SIZE, NUM_OBSTACLES, NUM_VERTICES) collisions_handler (
+    .clk_in(clk_in),
+    .rst_in(rst_in),
+    .begin_in(collision_begin),
+    .obstacles_in(obstacles),
+    .num_vertices_in(num_vertices),
+    .num_obstacles_in(num_obstacles),
+    .pos_x_in(pos_x_in),
+    .pos_y_in(pos_y_in),
+    .dx_in(dx),
+    .dy_in(dy),
+    //.ready(ready),
+    .result_out(collision_result),
+    .x_new_out(collision_new_x),
+    .y_new_out(collision_new_y)
+  );
+
   typedef enum {IDLE = 0, COLLISIONS = 1, FORCES = 2} update_state;
 
   update_state state = IDLE;
@@ -25,8 +42,8 @@ module update_point #(parameter DT = 1, parameter POSITION_SIZE=8, parameter VEL
   logic [POSITION_SIZE-1:0] all_num_vertices [NUM_OBSTACLES]; //array of num_vertices
   logic [POSITION_SIZE-1:0] num_obstacles;
 
-  logic  signed [POSITION_SIZE-1:0] pos_x, pos_y;
-  logic  signed [VELOCITY_SIZE-1:0] vel_x, vel_y;
+  logic  [POSITION_SIZE-1:0] pos_x, pos_y;
+  logic  [VELOCITY_SIZE-1:0] vel_x, vel_y;
 
   logic is_collision;
   logic signed [POSITION_SIZE-1:0] dx, dy;
@@ -113,6 +130,7 @@ do_collision #(DT, POSITION_SIZE,VELOCITY_SIZE, NUM_VERTICES) collision_doer (
 				end
 			end
 			COLLISIONS: begin
+				collisions_begin <= 0;
 				if (collision_result == 1) begin
 					if (was_collision == 1) begin
 						collision_obstacle <= last_obstacle_num;
@@ -178,5 +196,4 @@ do_collision #(DT, POSITION_SIZE,VELOCITY_SIZE, NUM_VERTICES) collision_doer (
 		endcase
 	end
   end
-
 endmodule
