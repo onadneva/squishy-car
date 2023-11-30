@@ -38,6 +38,8 @@ module collision_new_values #(POSITION_SIZE=8, VELOCITY_SIZE=8, ACCELERATION_SIZ
 	logic signed [2 * POSITION_SIZE + VELOCITY_SIZE + 3 -1:0] v_parr_x,v_parr_y, v_perp_x,v_perp_y;
 	logic signed [ACCELERATION_SIZE-1:0] acceleration_x, acceleration_y;
 	logic signed [1:0] side_adjust; 
+	logic signed [2*POSITION_SIZE + 2  -1:0] r_parr, r_perp;
+	logic signed [3 * POSITION_SIZE + 3 -1:0] r_parr_x,r_parr_y, r_perp_x,r_perp_y;
     logic on_line;
 	
 
@@ -49,23 +51,27 @@ module collision_new_values #(POSITION_SIZE=8, VELOCITY_SIZE=8, ACCELERATION_SIZ
 	assign t2 = (v2[0]*v1[1] - v1[0]*v2[1]);
 	assign x_num = run*t1 + dx*t2;
 	assign y_num = ~(rise*(dx*pos_y-dy*pos_x) + dy*((v2[1]*v1[0] - v1[1]*v2[0]))) + 2'sd1;//-(t2*dy - t1*(v2[1] - v1[0]));
+	
 	assign v_parr = vel_x * run + vel_y*rise;
 	assign v_parr_x = v_parr * run;
 	assign v_parr_y = v_parr * rise;
 	assign v_perp = vel_x * rise - vel_y*run;
 	assign v_perp_x = v_perp * rise;
 	assign v_perp_y = ~(v_perp * run) + 2'sd1;
-    /*
-	assign r_x = x + d - x_i;
-	assign r_y = x + d - x_i;
+    
+	//assign r_x = x + d - x_i;
+	//assign r_y = x + d - x_i;
 
-	assign r_parr = r_x * run + r_y*rise;
+	//assign r_parr = (denom * (pos_x + dx) - x_num) * run + (denom * (pos_y + dy) - y_num) * rise;
+	assign r_parr = ((pos_x + dx - x_int) * run + (pos_y + dy - y_int) * rise);
 	assign r_parr_x = r_parr * run;
 	assign r_parr_y = r_parr * rise;
-	assign r_perp = r_x * rise - r_y*run;
+	//assign r_perp = (denom * (pos_x + dx) - x_num) * rise - (denom * (pos_y + dy) - y_num) * run;
+	assign r_perp = (pos_x + dx - x_int) * rise - (pos_y + dy - y_int) * run;
+
 	assign r_perp_x = r_perp * rise;
-	assign r_perp_y = -(r_perp * run);
-*/
+	assign r_perp_y = ~(r_perp * run) + 2'sd1;
+
     //for testing
     logic signed [POSITION_SIZE-1:0] test1, test2;
     assign test1 = 2 * rise;
@@ -81,8 +87,13 @@ module collision_new_values #(POSITION_SIZE=8, VELOCITY_SIZE=8, ACCELERATION_SIZ
 		v2[0] = v2_in[0];
 		v2[1] = v2_in[1];
 
-		x_new =  (3'sd2 * x_num - denom * (pos_x + dx)) / denom;
-		y_new = (3'sd2 * y_num - denom * (pos_y + dy)) / denom;
+		x_new = x_int + ((r_parr_x - r_perp_x) / v_mag);
+		y_new = y_int + ((r_parr_y - r_perp_y) / v_mag );
+
+		//x_new = (v_mag * x_num + (r_parr_x - r_perp_x)) / (v_mag * denom);
+		//y_new = (v_mag * y_num + (r_parr_y - r_perp_y)) / (v_mag * denom);
+		//x_new =  (3'sd2 * x_num - denom * (pos_x + dx)) / denom;
+		//y_new = (3'sd2 * y_num - denom * (pos_y + dy)) / denom;
 
 		//x_new = (x_num * (run*run + rise*rise) + 2*(denom * (dy + pos_y) - y_num)*rise*run + (denom*(dx + pos_x) - x_num)*(run*run - rise*rise)) / (denom * v_mag);
 		//y_new = (y_num * (run*run + rise*rise) + 2*(denom * (dx + pos_x) -x_num)*rise*run + (denom*(dy + pos_y) - y_num)*(run*run - rise*rise)) / (denom * v_mag);
